@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import logoGrupoNG from "@/assets/logo-grupong.png";
 
 const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -33,13 +34,12 @@ const Navigation = () => {
       <div className="container-custom">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-xl text-primary-foreground transition-transform group-hover:scale-110">
-              NG
-            </div>
-            <span className="font-heading font-bold text-xl hidden sm:inline-block">
-              Grupo <span className="text-gradient">NG</span>
-            </span>
+          <a href="/" className="flex items-center group">
+            <img 
+              src={logoGrupoNG} 
+              alt="Grupo NG" 
+              className="h-10 w-auto transition-transform group-hover:scale-105"
+            />
           </a>
 
           {/* Desktop Navigation */}

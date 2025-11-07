@@ -1,4 +1,5 @@
 import { Instagram, Linkedin, Mail, Phone } from "lucide-react";
+import logoGrupoNG from "@/assets/logo-grupong.png";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -36,14 +37,11 @@ const Footer = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
             {/* Brand */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-xl text-primary-foreground">
-                  NG
-                </div>
-                <span className="font-heading font-bold text-xl">
-                  Grupo <span className="text-gradient">NG</span>
-                </span>
-              </div>
+              <img 
+                src={logoGrupoNG} 
+                alt="Grupo NG" 
+                className="h-10 w-auto"
+              />
               <p className="text-sm text-muted-foreground max-w-xs">
                 Aceleramos negócios com estratégia, tecnologia e inteligência.
               </p>
