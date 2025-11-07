@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 const SectionCases = () => {
   const cases = [
     {
-      title: "Imobiliária Colucci",
+      title: "Imobiliária Francisco Imóveis",
       summary: "-72% tempo de resposta, +210% taxa de fechamento com IA + CRM.",
       tags: ["Imobiliária", "IA", "CRM"],
       gradient: "from-blue-600/20 to-cyan-600/20",
