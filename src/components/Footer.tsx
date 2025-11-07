@@ -40,7 +40,7 @@ const Footer = () => {
               <img 
                 src={logoGrupoNG} 
                 alt="Grupo NG" 
-                className="h-14 w-auto"
+                className="h-20 w-auto"
               />
               <p className="text-sm text-muted-foreground max-w-xs">
                 Aceleramos negócios com estratégia, tecnologia e inteligência.
