@@ -49,9 +49,9 @@ const Hero = () => {
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 animate-fade-in-up">
             <Button variant="hero" size="lg" asChild>
-              <a href="#contato">
+              <a href="#contato" className="flex items-center gap-2">
                 Agendar diagnóstico
-                <ArrowRight className="ml-2" size={20} />
+                <ArrowRight size={20} />
               </a>
             </Button>
             <Button variant="outline" size="lg" asChild>
