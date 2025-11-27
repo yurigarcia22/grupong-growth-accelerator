@@ -10,16 +10,16 @@ const SectionCases = () => {
       gradient: "from-blue-600/20 to-cyan-600/20",
     },
     {
-      title: "ERF Reabilitação",
-      summary: "3x mais avaliações agendadas em 60 dias com processo + mídia.",
-      tags: ["Saúde", "Mídia", "Processo"],
-      gradient: "from-green-600/20 to-emerald-600/20",
+      title: "Cruzeiro do Sul Virtual",
+      summary: "Implementamos um ecossistema de captação que aumentou a qualificação dos leads, resultando em um crescimento de 40% na taxa de conversão de matrículas e otimização do CAC.",
+      tags: ["Educação", "Growth", "Conversão"],
+      gradient: "from-purple-600/20 to-pink-600/20",
     },
     {
-      title: "EAD Universitário",
-      summary: "+43% conversão com acompanhamento de leads + remarketing.",
-      tags: ["Educação", "CRM", "Mídia"],
-      gradient: "from-purple-600/20 to-pink-600/20",
+      title: "CS Integra",
+      summary: "Desenvolvemos um posicionamento B2B estratégico, elevando a percepção de valor da marca e abrindo portas para negociações com grandes players do mercado corporativo.",
+      tags: ["B2B", "Posicionamento", "Estratégia"],
+      gradient: "from-green-600/20 to-emerald-600/20",
     },
   ];
 
