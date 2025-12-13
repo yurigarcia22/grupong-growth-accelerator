@@ -3,10 +3,8 @@ import Hero from "@/components/Hero";
 import SectionAbout from "@/components/SectionAbout";
 import SectionAlavancas from "@/components/SectionAlavancas";
 import SectionCases from "@/components/SectionCases";
-import SectionSolucoes from "@/components/SectionSolucoes";
 import LogoWall from "@/components/LogoWall";
 import CTABanner from "@/components/CTABanner";
-import ContactForm from "@/components/ContactForm";
 import Footer from "@/components/Footer";
 
 const Index = () => {
@@ -19,9 +17,7 @@ const Index = () => {
         <SectionAbout />
         <SectionAlavancas />
         <SectionCases />
-        <SectionSolucoes />
         <CTABanner />
-        <ContactForm />
       </main>
       <Footer />
     </div>

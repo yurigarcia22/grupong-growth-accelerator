@@ -1,6 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 
+import logoFrancisco from "@/assets/logos/francisco-imoveis.png";
+import logoCruzeiro from "@/assets/logos/cruzeiro-do-sul.png";
+import logoCSIntegra from "@/assets/logos/cs-integra.png";
+
 const SectionCases = () => {
   const cases = [
     {
@@ -8,18 +12,24 @@ const SectionCases = () => {
       summary: "-72% tempo de resposta, +210% taxa de fechamento com IA + CRM.",
       tags: ["Imobiliária", "IA", "CRM"],
       gradient: "from-blue-600/20 to-cyan-600/20",
+      logo: logoFrancisco,
+      logoClassName: "w-32 md:w-40"
     },
     {
       title: "Cruzeiro do Sul Virtual",
       summary: "Implementamos um ecossistema de captação que aumentou a qualificação dos leads, resultando em um crescimento de 40% na taxa de conversão de matrículas e otimização do CAC.",
       tags: ["Educação", "Growth", "Conversão"],
       gradient: "from-purple-600/20 to-pink-600/20",
+      logo: logoCruzeiro,
+      logoClassName: "w-40 md:w-52", // Increased size
     },
     {
       title: "CS Integra",
       summary: "Desenvolvemos um posicionamento B2B estratégico, elevando a percepção de valor da marca e abrindo portas para negociações com grandes players do mercado corporativo.",
       tags: ["B2B", "Posicionamento", "Estratégia"],
       gradient: "from-green-600/20 to-emerald-600/20",
+      logo: logoCSIntegra,
+      logoClassName: "w-32 md:w-40"
     },
   ];
 
@@ -47,18 +57,22 @@ const SectionCases = () => {
               className="group relative bg-card rounded-2xl overflow-hidden border border-border hover:border-primary/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-soft animate-fade-in"
               style={{ animationDelay: `${i * 100}ms` }}
             >
-              {/* Image Placeholder */}
-              <div className={`aspect-video bg-gradient-to-br ${caseItem.gradient} relative overflow-hidden`}>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-6xl font-bold text-foreground/10">
-                    {caseItem.title.charAt(0)}
-                  </div>
+              {/* Image Area with Logo */}
+              <div className={`aspect-video bg-gradient-to-br ${caseItem.gradient} relative overflow-hidden flex items-center justify-center p-8`}>
+                <div className="relative z-10 transform group-hover:scale-105 transition-transform duration-300">
+                  <img
+                    src={caseItem.logo}
+                    alt={`Logo ${caseItem.title}`}
+                    // Added grayscale and group-hover:grayscale-0 for the effect
+                    className={`h-auto object-contain drop-shadow-lg grayscale group-hover:grayscale-0 transition-all duration-300 ${caseItem.logoClassName}`}
+                  />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
+                {/* Overlay gradient for depth */}
+                <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent opacity-80" />
               </div>
 
               {/* Content */}
-              <div className="p-6 space-y-4">
+              <div className="p-6 space-y-4 relative z-20">
                 {/* Tags */}
                 <div className="flex flex-wrap gap-2">
                   {caseItem.tags.map((tag, j) => (

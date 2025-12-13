@@ -17,7 +17,7 @@ const Footer = () => {
       title: "Contato",
       links: [
         { label: "contato@grupongbrasil.com.br", href: "mailto:contato@grupongbrasil.com.br", icon: Mail },
-        { label: "+55 99 99999-9999", href: "https://wa.me/5599999999999", icon: Phone },
+        { label: "+55 37 99957-7862", href: "https://wa.me/5537999577862", icon: Phone },
       ],
     },
     {
@@ -37,9 +37,9 @@ const Footer = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
             {/* Brand */}
             <div className="space-y-4">
-              <img 
-                src={logoGrupoNG} 
-                alt="Grupo NG" 
+              <img
+                src={logoGrupoNG}
+                alt="Grupo NG"
                 className="h-32 w-auto"
               />
               <p className="text-sm text-muted-foreground max-w-xs">

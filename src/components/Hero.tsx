@@ -1,90 +1,400 @@
+"use client";
+
+import { useGSAP } from "@gsap/react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { gsap } from "gsap";
+import { useMemo, useRef } from "react";
+import * as THREE from "three";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight, Play, CheckCircle2 } from "lucide-react";
+
+interface ShaderPlaneProps {
+  vertexShader: string;
+  fragmentShader: string;
+  uniforms: { [key: string]: { value: unknown } };
+}
+
+function ShaderPlane({
+  vertexShader,
+  fragmentShader,
+  uniforms,
+}: ShaderPlaneProps) {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const { size } = useThree();
+
+  useFrame((state) => {
+    if (meshRef.current) {
+      const material = meshRef.current.material as THREE.ShaderMaterial;
+      material.uniforms.u_time.value = state.clock.elapsedTime * 0.5;
+      material.uniforms.u_resolution.value.set(size.width, size.height, 1.0);
+    }
+  });
+
+  return (
+    <mesh ref={meshRef}>
+      <planeGeometry args={[2, 2]} />
+      <shaderMaterial
+        vertexShader={vertexShader}
+        fragmentShader={fragmentShader}
+        uniforms={uniforms}
+        side={THREE.DoubleSide}
+        depthTest={false}
+        depthWrite={false}
+      />
+    </mesh>
+  );
+}
+
+interface ShaderBackgroundProps {
+  vertexShader?: string;
+  fragmentShader?: string;
+  uniforms?: { [key: string]: { value: unknown } };
+  className?: string;
+}
+
+function ShaderBackground({
+  vertexShader = `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+    gl_Position = vec4(position, 1.0);
+    }
+  `,
+  fragmentShader = `
+    precision highp float;
+
+    varying vec2 vUv;
+    uniform float u_time;
+    uniform vec3 u_resolution;
+    uniform sampler2D iChannel0;
+
+    // OPTIMIZATION: Reduced steps for performance
+    #define STEP 80
+    #define EPS .001
+
+    float smin( float a, float b, float k )
+    {
+        float h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0 );
+        return mix( b, a, h ) - k*h*(1.0-h);
+    }
+
+    const mat2 m = mat2(.8,.6,-.6,.8);
+
+    float noise( in vec2 x )
+    {
+      return sin(1.5*x.x)*sin(1.5*x.y);
+    }
+
+    float fbm6( vec2 p )
+    {
+        float f = 0.0;
+        f += 0.500000*(0.5+0.5*noise( p )); p = m*p*2.02;
+        f += 0.250000*(0.5+0.5*noise( p )); p = m*p*2.03;
+        f += 0.125000*(0.5+0.5*noise( p )); p = m*p*2.01;
+        f += 0.062500*(0.5+0.5*noise( p )); p = m*p*2.04;
+        f += 0.015625*(0.5+0.5*noise( p ));
+        return f/0.96875;
+    }
+
+
+    mat2 getRot(float a)
+    {
+        float sa = sin(a), ca = cos(a);
+        return mat2(ca,-sa,sa,ca);
+    }
+
+
+    vec3 _position;
+
+    float sphere(vec3 center, float radius)
+    {
+        return distance(_position,center) - radius;
+    }
+
+    float swingPlane(float height)
+    {
+        vec3 pos = _position + vec3(0.,0.,u_time * 5.5);
+        float def =  fbm6(pos.xz * .25) * 0.5;
+        
+        float way = pow(abs(pos.x) * 34. ,2.5) *.0000125;
+        def *= way;
+        
+        float ch = height + def;
+        return max(pos.y - ch,0.);
+    }
+
+    float map(vec3 pos)
+    {
+        _position = pos;
+        
+        float dist;
+        dist = swingPlane(0.);
+        
+        float sminFactor = 5.25;
+        dist = smin(dist,sphere(vec3(0.,-15.,80.),60.),sminFactor);
+        return dist;
+    }
+
+
+    vec3 getNormal(vec3 pos)
+    {
+        vec3 nor = vec3(0.);
+        vec3 vv = vec3(0.,1.,-1.)*.01;
+        nor.x = map(pos + vv.zxx) - map(pos + vv.yxx);
+        nor.y = map(pos + vv.xzx) - map(pos + vv.xyx);
+        nor.z = map(pos + vv.xxz) - map(pos + vv.xxy);
+        nor /= 2.;
+        return normalize(nor);
+    }
+
+    void mainImage( out vec4 fragColor, in vec2 fragCoord )
+    {
+      vec2 uv = (fragCoord.xy-.5*u_resolution.xy)/u_resolution.y;
+        
+        vec3 rayOrigin = vec3(uv + vec2(0.,6.), -1. );
+        
+        vec3 rayDir = normalize(vec3(uv , 1.));
+        
+        rayDir.zy = getRot(.15) * rayDir.zy;
+        
+        vec3 position = rayOrigin;
+        
+        
+        float curDist;
+        int nbStep = 0;
+        
+        for(; nbStep < STEP;++nbStep)
+        {
+            curDist = map(position + (texture(iChannel0, position.xz) - .5).xyz * .005);
+            
+            if(curDist < EPS)
+                break;
+            position += rayDir * curDist * .5;
+        }
+        
+        float f;
+                
+        float dist = distance(rayOrigin,position);
+        f = dist /(98.);
+        f = float(nbStep) / float(STEP);
+        
+        // Darken the density factor substantially
+        f *= 0.6;
+        
+        // Updated color: #0A0A0A -> R:10, G:10, B:10 -> 0.039, 0.039, 0.039
+        vec3 themeColor = vec3(0.039, 0.039, 0.039);
+        
+        // Use theme color as absolute base
+        vec3 col = themeColor;
+        
+        // Blueish wave color to match requested brand tone
+        // Approx vibrant blue: R:0.2, G:0.4, B:0.9
+        vec3 waveColor = vec3(0.2, 0.4, 0.9); 
+        
+        // Mix efficiently: The denser the fog (f), the more blue it gets.
+        // We add a subtle gradient to waveColor to give it depth (purple-ish hints)
+        vec3 gradientWave = mix(waveColor, vec3(0.5, 0.2, 0.9), uv.y + 0.5);
+
+        col = mix(themeColor, gradientWave, pow(f, 2.2));
+
+        fragColor = vec4(col, 1.0);
+    }
+    void main() {
+      vec4 fragColor;
+      vec2 fragCoord = vUv * u_resolution.xy;
+      mainImage(fragColor, fragCoord);
+      gl_FragColor = fragColor;
+    }
+  `,
+  uniforms = {},
+  className = "w-full h-full",
+}: ShaderBackgroundProps) {
+  const shaderUniforms = useMemo(
+    () => ({
+      u_time: { value: 0 },
+      u_resolution: { value: new THREE.Vector3(1, 1, 1) },
+      ...uniforms,
+    }),
+    [uniforms],
+  );
+
+  return (
+    <div className={className}>
+      <Canvas className={className} dpr={[1, 1.5]}>
+        <ShaderPlane
+          vertexShader={vertexShader}
+          fragmentShader={fragmentShader}
+          uniforms={shaderUniforms}
+        />
+      </Canvas>
+    </div>
+  );
+}
 
 const Hero = () => {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const bgRef = useRef<HTMLDivElement>(null);
+  const h1Ref = useRef<HTMLHeadingElement>(null);
+  const descRef = useRef<HTMLDivElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+
+  useGSAP(
+    () => {
+      const ctas = ctaRef.current ? Array.from(ctaRef.current.children) : [];
+      const header = h1Ref.current;
+      const desc = descRef.current;
+      const stats = statsRef.current;
+
+      // Blur background initially
+      gsap.set(bgRef.current, { filter: "blur(28px)" });
+
+      // Text animations (with blur)
+      gsap.set([header, desc], {
+        opacity: 0,
+        y: 24,
+        filter: "blur(8px)",
+      });
+
+      // Stats animation (NO BLUR)
+      gsap.set(stats, {
+        opacity: 0,
+        y: 20
+      });
+
+      if (ctas.length) gsap.set(ctas, { opacity: 0, y: 16 });
+
+      const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
+      tl.to(bgRef.current, { filter: "blur(0px)", duration: 1.2 }, 0)
+        .to(
+          header,
+          {
+            opacity: 1,
+            y: 0,
+            filter: "blur(0px)",
+            duration: 0.8,
+          },
+          0.3,
+        )
+        .to(
+          desc,
+          {
+            opacity: 1,
+            y: 0,
+            filter: "blur(0px)",
+            duration: 0.6,
+          },
+          "-=0.4",
+        )
+        .to(ctas, { opacity: 1, y: 0, duration: 0.6, stagger: 0.08 }, "-=0.2")
+        // Simple fade-up for stats
+        .to(stats, { opacity: 1, y: 0, duration: 0.6 }, "-=0.2");
+
+    },
+    { scope: rootRef },
+  );
+
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-      {/* Gradient Background */}
-      <div 
-        className="absolute inset-0 z-0"
-        style={{
-          background: "radial-gradient(60% 60% at 50% 0%, hsl(254 100% 70% / 0.25), transparent)"
-        }}
-      />
-      
-      {/* Animated Grid */}
-      <div className="absolute inset-0 z-0 opacity-20">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `linear-gradient(hsl(254 100% 70% / 0.1) 1px, transparent 1px), 
-                           linear-gradient(90deg, hsl(254 100% 70% / 0.1) 1px, transparent 1px)`,
-          backgroundSize: '50px 50px'
-        }} />
+    <div
+      ref={rootRef}
+      className="relative min-h-screen w-full overflow-hidden bg-[#0A0A0A] text-white pt-20"
+    >
+      <div className="absolute inset-0" ref={bgRef}>
+        <ShaderBackground className="h-full w-full" />
       </div>
 
-      {/* Content */}
-      <div className="container-custom relative z-10">
-        <div className="max-w-5xl mx-auto text-center space-y-8">
-          {/* Eyebrow */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card/50 border border-border backdrop-blur-sm animate-fade-in">
-            <span className="w-2 h-2 rounded-full bg-primary animate-glow-pulse" />
-            <span className="text-sm text-muted-foreground font-medium">
-              Consultoria + Tech
+      {/* Stronger vignette to ensure text legibility */}
+      <div className="pointer-events-none absolute inset-0 [background:radial-gradient(120%_80%_at_50%_50%,_transparent_20%,_#0A0A0A_100%)]" />
+
+      <div className="relative z-10 container-custom flex min-h-[calc(100vh-80px)] w-full items-center justify-center py-10 md:py-20">
+        <div className="text-center max-w-5xl mx-auto">
+          {/* Badge */}
+          <div className="mb-8 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
+            <span className="text-sm font-medium text-blue-100 tracking-wide uppercase">
+              Comercial + Tech
             </span>
           </div>
 
-          {/* Main Title */}
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-heading font-bold leading-tight animate-fade-in-up">
-            Aceleramos negócios com{" "}
-            <span className="text-gradient">estratégia</span>,{" "}
-            <span className="text-gradient">tecnologia</span> e{" "}
-            <span className="text-gradient">inteligência</span>.
+          <h1
+            ref={h1Ref}
+            className="mx-auto max-w-5xl text-3xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.2] md:leading-[1.1] mb-6 md:mb-8 drop-shadow-2xl px-4"
+          >
+            Transformamos negócios <br className="hidden md:block" /> em operações previsíveis e escaláveis
           </h1>
 
-          {/* Subtitle */}
-          <p className="text-lg md:text-xl text-muted max-w-3xl mx-auto leading-relaxed animate-fade-in-up">
-            Conectamos as quatro alavancas de crescimento — Pessoas, Financeiro, Mídia e Tecnologia — 
-            para transformar operações em máquinas de receita previsível.
-          </p>
+          <div
+            ref={descRef}
+            className="mx-auto max-w-4xl text-base text-white/80 mb-10 space-y-8 leading-relaxed"
+          >
+            <p className="font-medium text-lg text-white/90">No Grupo NG, somos especialistas em reestruturar negócios com três pilares centrais:</p>
 
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 animate-fade-in-up">
-            <Button variant="hero" size="lg" asChild>
-              <a href="#contato" className="flex items-center gap-2">
-                Agendar diagnóstico
-                <ArrowRight size={20} />
+            {/* 3 Pillars - Card Style with Blue accents */}
+            {/* 3 Pillars - Card Style - Side by side on mobile */}
+            <div className="grid grid-cols-3 gap-2 md:gap-4 text-[10px] md:text-base leading-tight">
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-3 md:p-6 rounded-xl hover:bg-blue-500/10 hover:border-blue-500/30 transition-all duration-300 flex flex-col items-center justify-start gap-2 group cursor-default h-full">
+                <div className="p-1.5 md:p-2 rounded-lg bg-white/5 group-hover:bg-blue-500/20 transition-colors">
+                  <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
+                </div>
+                <span className="font-medium group-hover:text-blue-100 transition-colors">Processos eficientes</span>
+              </div>
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-3 md:p-6 rounded-xl hover:bg-blue-500/10 hover:border-blue-500/30 transition-all duration-300 flex flex-col items-center justify-start gap-2 group cursor-default h-full">
+                <div className="p-1.5 md:p-2 rounded-lg bg-white/5 group-hover:bg-blue-500/20 transition-colors">
+                  <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
+                </div>
+                <span className="font-medium group-hover:text-blue-100 transition-colors">Marketing por dados</span>
+              </div>
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-3 md:p-6 rounded-xl hover:bg-blue-500/10 hover:border-blue-500/30 transition-all duration-300 flex flex-col items-center justify-start gap-2 group cursor-default h-full">
+                <div className="p-1.5 md:p-2 rounded-lg bg-white/5 group-hover:bg-blue-500/20 transition-colors">
+                  <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-blue-400" />
+                </div>
+                <span className="font-medium group-hover:text-blue-100 transition-colors">Tech com inteligência</span>
+              </div>
+            </div>
+
+            <p className="max-w-2xl mx-auto pt-4 text-white/70">
+              Tudo conectado por uma metodologia própria que alinha pessoas, processos e dados para gerar receita previsível e crescimento sustentável.
+            </p>
+          </div>
+
+          <div
+            ref={ctaRef}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20"
+          >
+            <Button variant="outline" size="lg" className="h-12 px-8 bg-blue-600/20 hover:bg-blue-600/30 text-white border-blue-500/30 backdrop-blur-sm transition-all" asChild>
+              <a href="https://wa.me/5537999577862?text=Quero%20um%20diagn%C3%B3stico%20gratuito%20do%20Grupo%20NG" target="_blank" rel="noopener noreferrer">
+                Agendar diagnóstico <ArrowRight className="ml-2 w-4 h-4" />
               </a>
             </Button>
-            <Button variant="outline" size="lg" asChild>
-              <a href="#cases" className="flex items-center gap-2">
-                <Play size={20} />
-                Ver cases
+
+            <Button variant="ghost" size="lg" className="h-12 px-8 text-white hover:bg-white/5 hover:text-white" asChild>
+              <a href="#cases">
+                Ver casos reais <Play className="ml-2 w-4 h-4 fill-current" />
               </a>
             </Button>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-12 max-w-4xl mx-auto animate-fade-in">
+          {/* Stats - No Blur */}
+          <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-8 max-w-4xl mx-auto border-t border-white/10">
             {[
-              { value: "+80", label: "Negócios atendidos" },
-              { value: "+R$ 20M", label: "Pipeline criado" },
-              { value: "+30", label: "Agentes de IA" },
-              { value: "+1,5M", label: "Em tráfego gerido" },
+              { value: "+80", label: "Empresas transformadas" },
+              { value: "+R$ 20M", label: "Em pipeline criado" },
+              { value: "+30", label: "Agentes de IA operando" },
+              { value: "+1.5M", label: "Tráfego inteligente" },
             ].map((stat, i) => (
-              <div key={i} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-gradient mb-2">
+              <div key={i} className="text-center group">
+                <div className="text-2xl md:text-4xl font-bold text-white mb-1 group-hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] group-hover:text-blue-200">
                   {stat.value}
                 </div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
+                <div className="text-xs md:text-sm text-white/60 uppercase tracking-wider">{stat.label}</div>
               </div>
             ))}
           </div>
+
         </div>
       </div>
-
-      {/* Bottom Gradient */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent z-0" />
-    </section>
+    </div>
   );
-};
+}
 
 export default Hero;

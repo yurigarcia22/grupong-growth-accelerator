@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Send } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 const CTABanner = () => {
   return (
@@ -24,19 +24,13 @@ const CTABanner = () => {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Button variant="hero" size="lg" asChild>
                 <a
-                  href="https://wa.me/5599999999999?text=Quero%20um%20diagn%C3%B3stico%20gratuito%20do%20Grupo%20NG"
+                  href="https://wa.me/5537999577862?text=Quero%20um%20diagn%C3%B3stico%20gratuito%20do%20Grupo%20NG"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2"
                 >
                   Agendar no WhatsApp
                   <ArrowRight size={20} />
-                </a>
-              </Button>
-              <Button variant="outline" size="lg" asChild>
-                <a href="#form-contato" className="flex items-center gap-2">
-                  <Send size={20} />
-                  Enviar formulário
                 </a>
               </Button>
             </div>
