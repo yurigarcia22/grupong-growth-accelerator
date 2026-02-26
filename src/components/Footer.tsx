@@ -23,7 +23,7 @@ const Footer = () => {
     {
       title: "Redes",
       links: [
-        { label: "Instagram", href: "https://instagram.com/grupong", icon: Instagram },
+        { label: "Instagram", href: "https://instagram.com/grupong_/", icon: Instagram },
         { label: "LinkedIn", href: "https://linkedin.com/company/grupong", icon: Linkedin },
       ],
     },

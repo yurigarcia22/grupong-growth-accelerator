@@ -18,8 +18,8 @@ const SectionAlavancas = () => {
     },
     {
       icon: Megaphone,
-      title: "Mídia",
-      text: "Geração de demanda com inteligência: tráfego pago, omnichannel, posicionamento e influência digital.",
+      title: "Geração de Demanda",
+      text: "Estratégias de tráfego pago, omnichannel, posicionamento e influência digital com inteligência.",
       color: "from-orange-500/20 to-red-600/20",
     },
     {
